@@ -104,47 +104,56 @@ const TAG_LABELS = {
 const getTag = (t) => TAG_LABELS[t] || t;
 const priceLbl = ["","$","$$","$$$","$$$$"];
 
-// Themed stock images mapped to tags (not POI images)
+// Venue-style images mapped to tags (restaurants, bars, cafes, museums, parks etc.)
 const THEMED_IMAGES = {
   nature: [
-    "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=70",
-    "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&q=70",
-    "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=70",
+    "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400&q=70",  // scenic park trail
+    "https://images.unsplash.com/photo-1559521783-1d1599583485?w=400&q=70",  // botanical garden
+    "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=400&q=70",  // zen garden
+    "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&q=70",  // countryside vineyard
   ],
   nightlife: [
-    "https://images.unsplash.com/photo-1519214605650-76a613ee3245?w=400&q=70",
-    "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=400&q=70",
-    "https://images.unsplash.com/photo-1571204829887-3b8d69e4094d?w=400&q=70",
+    "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=400&q=70",  // club dance floor
+    "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=400&q=70",  // neon bar
+    "https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=400&q=70",  // cocktail bar
+    "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&q=70",  // concert venue
   ],
   art: [
-    "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?w=400&q=70",
-    "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=400&q=70",
-    "https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=400&q=70",
+    "https://images.unsplash.com/photo-1554907984-15263bfd63bd?w=400&q=70",  // gallery interior
+    "https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=400&q=70",  // modern art museum
+    "https://images.unsplash.com/photo-1574958269340-fa927503f3dd?w=400&q=70",  // sculpture gallery
+    "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400&q=70",  // street art wall
   ],
   food: [
-    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=70",
-    "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=70",
-    "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=400&q=70",
+    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=70",  // restaurant interior
+    "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=400&q=70",  // fine dining table
+    "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&q=70",  // bustling market food
+    "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&q=70",  // street food stall
+    "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&q=70",  // cozy restaurant
   ],
   history: [
-    "https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=400&q=70",
-    "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&q=70",
-    "https://images.unsplash.com/photo-1608178398319-48f814d0750c?w=400&q=70",
+    "https://images.unsplash.com/photo-1564399579883-451a5d44ec08?w=400&q=70",  // ancient ruins
+    "https://images.unsplash.com/photo-1548013146-72479768bada?w=400&q=70",  // taj mahal
+    "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=400&q=70",  // old town alley
+    "https://images.unsplash.com/photo-1590930620373-e21b381d1179?w=400&q=70",  // castle interior
   ],
   beach: [
-    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=70",
-    "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400&q=70",
-    "https://images.unsplash.com/photo-1473116763249-2faaef81ccda?w=400&q=70",
+    "https://images.unsplash.com/photo-1520454974749-611b7248ffdb?w=400&q=70",  // beach bar
+    "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?w=400&q=70",  // tropical pier
+    "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=400&q=70",  // seaside lounge
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=70",  // sandy beach
   ],
   city: [
-    "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=70",
-    "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=70",
-    "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=400&q=70",
+    "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=400&q=70",  // bustling street
+    "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400&q=70",  // shopping district
+    "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=70",  // city skyline
+    "https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=400&q=70",  // bazaar alley
   ],
   cozy: [
-    "https://images.unsplash.com/photo-1517991104123-1d56a6e81ed9?w=400&q=70",
-    "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&q=70",
-    "https://images.unsplash.com/photo-1558882224-dda166ffe92d?w=400&q=70",
+    "https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=400&q=70",  // coffee shop
+    "https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=400&q=70",  // bookstore cafe
+    "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=400&q=70",  // cozy cafe interior
+    "https://images.unsplash.com/photo-1493857671505-72967e2e2760?w=400&q=70",  // candlelit bistro
   ],
 };
 
@@ -496,7 +505,7 @@ export default function PersonaBuilder() {
         {isFinished ? (
           <div style={{ textAlign:"center", animation:"fadeIn .5s ease", position:"relative", zIndex:2, background:"rgba(12,12,12,0.65)", backdropFilter:"blur(12px)", borderRadius:20, border:"1px solid rgba(255,255,255,0.06)", padding: isMobile ? 24 : 36 }}>
             <div style={{ fontSize:42, color:"#5b9a6a", marginBottom:14, fontFamily:"'Instrument Serif',serif" }}>✦</div>
-            <h2 style={{ fontFamily:"'Instrument Serif',serif", fontSize:30, fontWeight:400, color:"#e0e0e0", marginBottom:8, fontStyle:"italic" }}>Profile Ready</h2>
+            <h2 style={{ fontFamily:"'Instrument Serif',serif", fontSize:30, fontWeight:400, color:"#e0e0e0", marginBottom:8, fontStyle:"italic" }}>Profile is Ready</h2>
             <p style={{ fontSize:14, color:"#666", marginBottom:36 }}>You reviewed {reactions.length} places</p>
             <div style={{ display:"flex", gap:48, justifyContent:"center" }}>
               {[["loves",loves.length,"#5b9a6a"],["dislikes",dislikes.length,"#b87a5a"]].map(([l,n,c]) => (
