@@ -104,104 +104,71 @@ const TAG_LABELS = {
 const getTag = (t) => TAG_LABELS[t] || t;
 const priceLbl = ["","$","$$","$$$","$$$$"];
 
-// Stable shuffled rows - computed once outside component
-function shuffle(arr, seed) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(((Math.sin(seed * (i + 1)) + 1) / 2) * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+const WALL_SPEEDS = [55, 40, 50, 45];
 
-const ALL_IMAGES = MOCK_POIS.map(p => ({ id: p.id, url: p.image, name: p.name }));
-const WALL_ROWS = [shuffle(ALL_IMAGES, 1), shuffle(ALL_IMAGES, 2), shuffle(ALL_IMAGES, 3), shuffle(ALL_IMAGES, 4)];
-const WALL_SPEEDS = [60, 45, 55, 40];
-
-// Netflix-style flowing poster wall
+// Background wall built from liked images only
 function BgSlideshow({ likedImages }) {
-  const likedIds = useMemo(() => new Set(likedImages.map(i => i.id)), [likedImages]);
+  // Fill 4 rows by repeating liked images in offset patterns
+  const rows = useMemo(() => {
+    if (likedImages.length === 0) return [];
+    const perRow = Math.max(12, likedImages.length * 3);
+    return [0, 1, 2, 3].map(ri => {
+      const shifted = [...likedImages.slice(ri % likedImages.length), ...likedImages.slice(0, ri % likedImages.length)];
+      const row = [];
+      for (let i = 0; i < perRow; i++) row.push(shifted[i % shifted.length]);
+      return row;
+    });
+  }, [likedImages]);
+
+  if (likedImages.length === 0) return null;
+
+  // More liked = more visible
+  const intensity = Math.min(likedImages.length / 5, 1);
+  const wallOpacity = 0.15 + intensity * 0.35;
 
   return (
     <div style={{
       position: "absolute", inset: 0, overflow: "hidden", zIndex: 0,
+      pointerEvents: "none",
+      opacity: wallOpacity,
+      transition: "opacity 1.5s ease",
     }}>
       {/* Poster wall grid */}
       <div style={{
-        position: "absolute", inset: -60,
-        display: "flex", flexDirection: "column", gap: 8,
+        position: "absolute", inset: -80,
+        display: "flex", flexDirection: "column", gap: 10,
         justifyContent: "center",
-        transform: "rotate(-8deg) scale(1.3)",
-        opacity: likedImages.length > 0 ? 0.35 : 0.12,
-        transition: "opacity 1.5s ease",
+        transform: "rotate(-8deg) scale(1.2)",
       }}>
-        {WALL_ROWS.map((row, ri) => (
+        {rows.map((row, ri) => (
           <div key={ri} style={{
-            display: "flex", gap: 8,
+            display: "flex", gap: 10,
             animation: `wallScroll${ri % 2 === 0 ? "L" : "R"} ${WALL_SPEEDS[ri]}s linear infinite`,
           }}>
-            {/* Duplicate row for seamless loop */}
+            {/* Triple for seamless loop */}
             {[...row, ...row, ...row].map((img, ii) => (
               <div key={`${ri}-${ii}`} style={{
-                width: 180, height: 120, flexShrink: 0, borderRadius: 8,
-                overflow: "hidden", position: "relative",
+                width: 200, height: 135, flexShrink: 0, borderRadius: 10,
+                overflow: "hidden",
               }}>
                 <img src={img.url} alt="" style={{
                   width: "100%", height: "100%", objectFit: "cover",
-                  filter: likedIds.has(img.id)
-                    ? "saturate(0.7) brightness(0.6)"
-                    : "saturate(0.2) brightness(0.35)",
-                  transition: "filter 1s ease",
+                  filter: `saturate(0.8) brightness(0.65)`,
                 }} />
-                {likedIds.has(img.id) && (
-                  <div style={{
-                    position: "absolute", inset: 0,
-                    border: "1px solid rgba(91,154,106,0.25)",
-                    borderRadius: 8,
-                  }} />
-                )}
               </div>
             ))}
           </div>
         ))}
       </div>
 
-      {/* Dark overlay */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "rgba(12,12,12,0.55)",
-      }} />
-      {/* Vignette */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "radial-gradient(ellipse at center, transparent 20%, #0c0c0c 70%)",
-      }} />
-      {/* Bottom fade */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0, height: "45%",
-        background: "linear-gradient(transparent, #0c0c0c)",
-      }} />
-      {/* Top fade */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, height: "35%",
-        background: "linear-gradient(#0c0c0c, transparent)",
-      }} />
-      {/* Left fade */}
-      <div style={{
-        position: "absolute", top: 0, bottom: 0, left: 0, width: "25%",
-        background: "linear-gradient(to right, #0c0c0c, transparent)",
-      }} />
-      {/* Right fade */}
-      <div style={{
-        position: "absolute", top: 0, bottom: 0, right: 0, width: "25%",
-        background: "linear-gradient(to left, #0c0c0c, transparent)",
-      }} />
-      {/* Grain */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: `repeating-conic-gradient(rgba(255,255,255,0.01) 0% 25%, transparent 0% 50%) 0 0 / 3px 3px`,
-        opacity: 0.4,
-      }} />
+      {/* Overlays */}
+      <div style={{ position: "absolute", inset: 0, background: "rgba(12,12,12,0.3)" }} />
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, transparent 30%, #0c0c0c 75%)" }} />
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "40%", background: "linear-gradient(transparent, #0c0c0c)" }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "30%", background: "linear-gradient(#0c0c0c, transparent)" }} />
+      <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "20%", background: "linear-gradient(to right, #0c0c0c, transparent)" }} />
+      <div style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: "20%", background: "linear-gradient(to left, #0c0c0c, transparent)" }} />
+      <div style={{ position: "absolute", inset: 0, background: `repeating-conic-gradient(rgba(255,255,255,0.01) 0% 25%, transparent 0% 50%) 0 0 / 3px 3px`, opacity: 0.3 }} />
     </div>
   );
 }
@@ -233,6 +200,7 @@ export default function PersonaBuilder() {
       return poi ? { id: poi.id, url: poi.image, name: poi.name } : null;
     })
     .filter(Boolean);
+
 
   const computePersonaSummary = useCallback((prefs) => {
     const sorted = Object.entries(prefs).sort((a, b) => Math.abs(b[1].score) - Math.abs(a[1].score));
@@ -514,12 +482,9 @@ export default function PersonaBuilder() {
               <button className="rb big" style={{ borderColor:"#d4566a", color:"#d4566a" }} onClick={() => handleReaction("love")}>♥</button>
               <button className="rb" style={{ borderColor:"#5b9a6a", color:"#5b9a6a" }} onClick={() => handleReaction("like")}>✓</button>
             </div>
-            <div style={{ display:"flex", gap:24, justifyContent:"center", fontSize:10, color:"rgba(255,255,255,0.12)", marginTop:-8, position:"relative", zIndex:2 }}>
-              <span>nope</span><span>love it</span><span>nice</span>
-            </div>
           </div>
         ) : (
-          <div className={reasonAnim?"ri":"ro"} style={{ ...S.rBox, position:"relative", zIndex:2 }}>
+          <div key={currentIndex} className={reasonAnim?"ri":"ro"} style={{ ...S.rBox, position:"relative", zIndex:2 }}>
             <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20 }}>
               <span style={{ color:rc(currentReaction), fontSize:18 }}>{ri(currentReaction)}</span>
               <span style={S.rTitle}>{currentPoi.name}</span>
@@ -530,7 +495,7 @@ export default function PersonaBuilder() {
                 const on = selectedReasons.includes(tag);
                 const neg = currentReaction === "dislike";
                 return (
-                  <span key={tag} className={`chip ${on?"on":""}`}
+                  <span key={`${currentIndex}-${tag}`} className={`chip ${on?"on":""}`}
                     style={{
                       background: on ? (neg?"rgba(184,122,90,.12)":"rgba(91,154,106,.12)") : "rgba(255,255,255,.03)",
                       color: on ? (neg?"#daa080":"#7cc08e") : "#777",
