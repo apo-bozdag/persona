@@ -104,43 +104,112 @@ const TAG_LABELS = {
 const getTag = (t) => TAG_LABELS[t] || t;
 const priceLbl = ["","$","$$","$$$","$$$$"];
 
-// Background wall built from liked images only
-function BgSlideshow({ likedImages }) {
-  // Fill 4 rows by repeating liked images in offset patterns
+// Themed stock images mapped to tags (not POI images)
+const THEMED_IMAGES = {
+  nature: [
+    "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=70",
+    "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&q=70",
+    "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=70",
+  ],
+  nightlife: [
+    "https://images.unsplash.com/photo-1519214605650-76a613ee3245?w=400&q=70",
+    "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=400&q=70",
+    "https://images.unsplash.com/photo-1571204829887-3b8d69e4094d?w=400&q=70",
+  ],
+  art: [
+    "https://images.unsplash.com/photo-1536924940846-227afb31e2a5?w=400&q=70",
+    "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=400&q=70",
+    "https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=400&q=70",
+  ],
+  food: [
+    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=70",
+    "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=70",
+    "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=400&q=70",
+  ],
+  history: [
+    "https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=400&q=70",
+    "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&q=70",
+    "https://images.unsplash.com/photo-1608178398319-48f814d0750c?w=400&q=70",
+  ],
+  beach: [
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=70",
+    "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=400&q=70",
+    "https://images.unsplash.com/photo-1473116763249-2faaef81ccda?w=400&q=70",
+  ],
+  city: [
+    "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400&q=70",
+    "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=70",
+    "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=400&q=70",
+  ],
+  cozy: [
+    "https://images.unsplash.com/photo-1517991104123-1d56a6e81ed9?w=400&q=70",
+    "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&q=70",
+    "https://images.unsplash.com/photo-1558882224-dda166ffe92d?w=400&q=70",
+  ],
+};
+
+// Map tags to themed categories
+const TAG_TO_THEME = {
+  nature:"nature", outdoor:"nature", park:"nature", camping:"nature", treehouse:"nature",
+  nightlife:"nightlife", techno:"nightlife", underground:"nightlife", industrial:"nightlife", dark_ambiance:"nightlife",
+  art:"art", contemporary:"art", cultural:"art", museum:"art", library:"art", inspiring:"art",
+  fine_dining:"food", seafood:"food", traditional:"food", ottoman:"food", street_food:"food", market:"food", fresh:"food", meat:"food", steakhouse:"food", wine:"food",
+  history:"history", historic:"history", heritage:"history", national:"history", ataturk:"history", ruins:"history", abandoned:"history",
+  beach:"beach", waterfront:"beach", backpacker:"beach",
+  neighborhood:"city", shopping:"city", crowded:"city", touristy:"city", iconic:"city", architecture:"city", colorful:"city", vibrant:"city", bustling:"city",
+  quiet:"cozy", peaceful:"cozy", cozy:"cozy", calm:"cozy", authentic:"cozy", local:"cozy", vintage:"cozy", cats:"cozy", romantic:"cozy",
+};
+
+const ALL_THEMED = Object.values(THEMED_IMAGES).flat();
+
+// Background wall - shows themed images based on preferences
+function BgSlideshow({ preferences, reactionsCount }) {
   const rows = useMemo(() => {
-    if (likedImages.length === 0) return [];
-    const perRow = Math.max(12, likedImages.length * 3);
-    return [0, 1, 2, 3, 4].map(ri => {
-      const shifted = [...likedImages.slice(ri % likedImages.length), ...likedImages.slice(0, ri % likedImages.length)];
+    // Pick images based on top preference themes
+    let pool;
+    const prefEntries = Object.entries(preferences).filter(([, v]) => v.score > 0);
+    if (prefEntries.length > 0) {
+      const themes = new Set();
+      prefEntries.sort((a, b) => b[1].score - a[1].score);
+      prefEntries.forEach(([tag]) => {
+        const theme = TAG_TO_THEME[tag];
+        if (theme) themes.add(theme);
+      });
+      if (themes.size > 0) {
+        pool = [...themes].flatMap(t => THEMED_IMAGES[t] || []);
+      } else {
+        pool = ALL_THEMED;
+      }
+    } else {
+      pool = ALL_THEMED;
+    }
+
+    const perRow = Math.max(12, pool.length * 2);
+    return [0, 1, 2, 3, 4].map(() => {
+      const shuffled = [...pool].sort(() => Math.random() - 0.5);
       const row = [];
-      for (let i = 0; i < perRow; i++) row.push(shifted[i % shifted.length]);
+      for (let i = 0; i < perRow; i++) row.push({ url: shuffled[i % shuffled.length] });
       return row;
     });
-  }, [likedImages]);
-
-  if (likedImages.length === 0) return null;
-
-  // More liked = more visible
-  const intensity = Math.min(likedImages.length / 5, 1);
-  const wallOpacity = 0.4 + intensity * 0.45;
+  }, [preferences]);
 
   return (
     <div style={{
       position: "absolute", inset: 0, overflow: "hidden", zIndex: 0,
       pointerEvents: "none",
-      opacity: wallOpacity,
-      transition: "opacity 1.5s ease",
+      opacity: 0.7,
     }}>
       {/* Poster wall grid */}
       <div style={{
         position: "absolute", inset: -80,
         display: "flex", flexDirection: "column", gap: 8,
         justifyContent: "center",
-        transform: "rotate(0deg) scale(1.2)",
+        transform: "scale(1.2)",
       }}>
         {rows.map((row, ri) => (
-          <div key={ri} style={{
+          <div key={`${ri}-${reactionsCount}`} style={{
             display: "flex", gap: 8,
+            animation: reactionsCount > 0 ? `${ri % 2 === 0 ? "wallFlushL" : "wallFlushR"} .4s cubic-bezier(.22,1,.36,1)` : undefined,
           }}>
             {/* Triple for seamless loop */}
             {[...row, ...row, ...row].map((img, ii) => (
@@ -187,17 +256,10 @@ export default function PersonaBuilder() {
   const dragStart = useRef(null);
   const [cardKey, setCardKey] = useState(0);
   const [showPanel, setShowPanel] = useState(false);
+  const [tipDismissed, setTipDismissed] = useState(false);
 
   const currentPoi = MOCK_POIS[currentIndex];
   const isFinished = currentIndex >= MOCK_POIS.length;
-
-  const likedImages = reactions
-    .filter(r => r.reaction === "love" || r.reaction === "like")
-    .map(r => {
-      const poi = MOCK_POIS.find(p => p.id === r.poi_id);
-      return poi ? { id: poi.id, url: poi.image, name: poi.name } : null;
-    })
-    .filter(Boolean);
 
 
   const computePersonaSummary = useCallback((prefs) => {
@@ -290,6 +352,8 @@ export default function PersonaBuilder() {
         @keyframes bgTextScroll { from { transform:translateX(0); } to { transform:translateX(-50%); } }
         @keyframes wallScrollL { from { transform:translateX(0); } to { transform:translateX(-33.33%); } }
         @keyframes wallScrollR { from { transform:translateX(-33.33%); } to { transform:translateX(0); } }
+        @keyframes wallFlushL { 0% { transform:translateX(100%); } 100% { transform:translateX(0); } }
+        @keyframes wallFlushR { 0% { transform:translateX(-100%); } 100% { transform:translateX(0); } }
         .ci { animation:cardIn .42s cubic-bezier(.22,1,.36,1) forwards; }
         .el { animation:exitL .32s cubic-bezier(.55,0,1,.45) forwards; }
         .er { animation:exitR .32s cubic-bezier(.55,0,1,.45) forwards; }
@@ -306,8 +370,7 @@ export default function PersonaBuilder() {
         .jt { font-family:'DM Sans',sans-serif; font-size:11px; padding:5px 10px; border-radius:5px; border:1px solid #2a2a2a; background:#141414; color:#666; cursor:pointer; transition:all .18s; letter-spacing:.02em; }
         .jt:hover { color:#aaa; border-color:#444; }
         .tip { position:relative; }
-        .tip::after { content:attr(data-tip); position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); padding:5px 10px; background:#1a1a1a; border:1px solid #333; border-radius:6px; font-family:'DM Sans',sans-serif; font-size:11px; color:#aaa; white-space:nowrap; pointer-events:none; opacity:0; transition:opacity .18s; }
-        .tip:hover::after { opacity:1; }
+        .tip::after { content:attr(data-tip); position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); padding:5px 10px; background:#1a1a1a; border:1px solid #333; border-radius:6px; font-family:'DM Sans',sans-serif; font-size:11px; color:#aaa; white-space:nowrap; pointer-events:none; opacity:1; transition:opacity .18s; }
         .sb { font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; padding:11px 30px; border-radius:24px; border:none; cursor:pointer; transition:all .18s; color:#fff; }
         .sb:hover { transform:translateY(-1px); filter:brightness(1.08); }
         .sk { font-family:'DM Sans',sans-serif; font-size:13px; color:#555; background:none; border:none; cursor:pointer; padding:8px 16px; transition:color .18s; }
@@ -343,7 +406,7 @@ export default function PersonaBuilder() {
             <span style={S.logoN}>{reactions.length}/{MOCK_POIS.length}</span>
           </div>
           <div style={{ display:"flex", gap:8 }}>
-            <span className="tip" data-tip="View your persona as JSON"><button className="jt" onClick={() => setShowJson(!showJson)}>{showJson ? "profile" : "{ }"}</button></span>
+            <span className={tipDismissed ? "" : "tip"} data-tip="View your persona as JSON"><button className="jt" onClick={() => { setShowJson(!showJson); setTipDismissed(true); }}>{showJson ? "profile" : "{ }"}</button></span>
           </div>
         </div>
 
@@ -409,7 +472,7 @@ export default function PersonaBuilder() {
 
       {/* RIGHT PANEL */}
       <div style={S.right}>
-        <BgSlideshow likedImages={likedImages} />
+        <BgSlideshow preferences={preferences} reactionsCount={reactions.length} />
 
         {loves.length > 0 && (
           <div style={{
@@ -431,7 +494,7 @@ export default function PersonaBuilder() {
         )}
 
         {isFinished ? (
-          <div style={{ textAlign:"center", animation:"fadeIn .5s ease", position:"relative", zIndex:2 }}>
+          <div style={{ textAlign:"center", animation:"fadeIn .5s ease", position:"relative", zIndex:2, background:"rgba(12,12,12,0.65)", backdropFilter:"blur(12px)", borderRadius:20, border:"1px solid rgba(255,255,255,0.06)", padding: isMobile ? 24 : 36 }}>
             <div style={{ fontSize:42, color:"#5b9a6a", marginBottom:14, fontFamily:"'Instrument Serif',serif" }}>✦</div>
             <h2 style={{ fontFamily:"'Instrument Serif',serif", fontSize:30, fontWeight:400, color:"#e0e0e0", marginBottom:8, fontStyle:"italic" }}>Profile Ready</h2>
             <p style={{ fontSize:14, color:"#666", marginBottom:36 }}>You reviewed {reactions.length} places</p>
@@ -600,8 +663,8 @@ const S = {
   jsonW: { flex:1, overflowY:"auto", padding:"10px 18px" },
   jsonP: { fontSize:10, fontFamily:"'SF Mono','Fira Code',monospace", color:"#5a8a5a", lineHeight:1.5, whiteSpace:"pre-wrap", wordBreak:"break-all" },
 
-  right: { flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding: isMobile ? 16 : 36, position:"relative", overflow:"hidden" },
-  cardArea: { display:"flex", flexDirection:"column", alignItems:"center", gap: isMobile ? 16 : 22, width:"100%", maxWidth:400, background:"rgba(12,12,12,0.65)", backdropFilter:"blur(12px)", borderRadius:20, border:"1px solid rgba(255,255,255,0.06)", padding: isMobile ? 14 : 20 },
+  right: { flex:1, display:"flex", alignItems: isMobile ? "flex-end" : "center", justifyContent:"center", padding: isMobile ? "8px 10px 12px" : 36, position:"relative", overflow:"hidden" },
+  cardArea: { display:"flex", flexDirection:"column", alignItems:"center", gap: isMobile ? 12 : 22, width:"100%", maxWidth:400, background:"rgba(12,12,12,0.65)", backdropFilter:"blur(12px)", borderRadius: isMobile ? "16px 16px 12px 12px" : 20, border:"1px solid rgba(255,255,255,0.06)", padding: isMobile ? 12 : 20 },
   dots: { display:"flex", gap:5, justifyContent:"center" },
   card: { width:"100%", background:"rgba(21,21,21,0.92)", backdropFilter:"blur(20px)", borderRadius:14, overflow:"hidden", boxShadow:"0 6px 36px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,0.04)", cursor:"grab", position:"relative", userSelect:"none", touchAction:"none" },
   imgW: { position:"relative", width:"100%", height: isMobile ? 200 : 250, overflow:"hidden" },
@@ -615,7 +678,7 @@ const S = {
   cTag: { fontSize:10, color:"#666", background:"rgba(255,255,255,.03)", padding:"3px 9px", borderRadius:8 },
   cHours: { fontSize:10, color:"#444" },
   btnRow: { display:"flex", gap: isMobile ? 14 : 18, alignItems:"center", justifyContent:"center" },
-  rBox: { width:"100%", maxWidth:460, padding: isMobile ? 20 : 28, background:"rgba(12,12,12,0.65)", backdropFilter:"blur(12px)", borderRadius:20, border:"1px solid rgba(255,255,255,0.06)" },
+  rBox: { width:"100%", maxWidth:460, padding: isMobile ? 16 : 28, background:"rgba(12,12,12,0.65)", backdropFilter:"blur(12px)", borderRadius: isMobile ? "16px 16px 12px 12px" : 20, border:"1px solid rgba(255,255,255,0.06)" },
   rTitle: { fontFamily:"'Instrument Serif',serif", fontSize: isMobile ? 18 : 20, fontWeight:400, color:"#ddd", fontStyle:"italic" },
   rQ: { fontSize: isMobile ? 13 : 14, color:"#999", marginBottom: isMobile ? 14 : 18 },
   chips: { display:"flex", flexWrap:"wrap", gap: isMobile ? 6 : 7, marginBottom: isMobile ? 16 : 22 },
