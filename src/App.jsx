@@ -104,15 +104,13 @@ const TAG_LABELS = {
 const getTag = (t) => TAG_LABELS[t] || t;
 const priceLbl = ["","$","$$","$$$","$$$$"];
 
-const WALL_SPEEDS = [55, 40, 50, 45];
-
 // Background wall built from liked images only
 function BgSlideshow({ likedImages }) {
   // Fill 4 rows by repeating liked images in offset patterns
   const rows = useMemo(() => {
     if (likedImages.length === 0) return [];
     const perRow = Math.max(12, likedImages.length * 3);
-    return [0, 1, 2, 3].map(ri => {
+    return [0, 1, 2, 3, 4].map(ri => {
       const shifted = [...likedImages.slice(ri % likedImages.length), ...likedImages.slice(0, ri % likedImages.length)];
       const row = [];
       for (let i = 0; i < perRow; i++) row.push(shifted[i % shifted.length]);
@@ -124,7 +122,7 @@ function BgSlideshow({ likedImages }) {
 
   // More liked = more visible
   const intensity = Math.min(likedImages.length / 5, 1);
-  const wallOpacity = 0.15 + intensity * 0.35;
+  const wallOpacity = 0.4 + intensity * 0.45;
 
   return (
     <div style={{
@@ -136,14 +134,13 @@ function BgSlideshow({ likedImages }) {
       {/* Poster wall grid */}
       <div style={{
         position: "absolute", inset: -80,
-        display: "flex", flexDirection: "column", gap: 10,
+        display: "flex", flexDirection: "column", gap: 8,
         justifyContent: "center",
-        transform: "rotate(-8deg) scale(1.2)",
+        transform: "rotate(0deg) scale(1.2)",
       }}>
         {rows.map((row, ri) => (
           <div key={ri} style={{
-            display: "flex", gap: 10,
-            animation: `wallScroll${ri % 2 === 0 ? "L" : "R"} ${WALL_SPEEDS[ri]}s linear infinite`,
+            display: "flex", gap: 8,
           }}>
             {/* Triple for seamless loop */}
             {[...row, ...row, ...row].map((img, ii) => (
@@ -153,7 +150,7 @@ function BgSlideshow({ likedImages }) {
               }}>
                 <img src={img.url} alt="" style={{
                   width: "100%", height: "100%", objectFit: "cover",
-                  filter: `saturate(0.8) brightness(0.65)`,
+                  filter: `saturate(1) brightness(0.85)`,
                 }} />
               </div>
             ))}
@@ -162,8 +159,8 @@ function BgSlideshow({ likedImages }) {
       </div>
 
       {/* Overlays */}
-      <div style={{ position: "absolute", inset: 0, background: "rgba(12,12,12,0.3)" }} />
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, transparent 30%, #0c0c0c 75%)" }} />
+      <div style={{ position: "absolute", inset: 0, background: "rgba(12,12,12,0.05)" }} />
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, transparent 50%, #0c0c0c 80%)" }} />
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "40%", background: "linear-gradient(transparent, #0c0c0c)" }} />
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "30%", background: "linear-gradient(#0c0c0c, transparent)" }} />
       <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "20%", background: "linear-gradient(to right, #0c0c0c, transparent)" }} />
@@ -189,6 +186,7 @@ export default function PersonaBuilder() {
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef(null);
   const [cardKey, setCardKey] = useState(0);
+  const [showPanel, setShowPanel] = useState(false);
 
   const currentPoi = MOCK_POIS[currentIndex];
   const isFinished = currentIndex >= MOCK_POIS.length;
@@ -248,12 +246,13 @@ export default function PersonaBuilder() {
 
   const toggleReason = (tag) => setSelectedReasons(p => p.includes(tag) ? p.filter(t => t !== tag) : [...p, tag]);
 
+  const dragThreshold = isMobile ? 60 : 100;
   const onPD = (e) => { if (phase === "swipe") { dragStart.current = e.clientX; setIsDragging(true); } };
   const onPM = (e) => { if (isDragging && dragStart.current) setDragX(e.clientX - dragStart.current); };
   const onPU = () => {
     if (!isDragging) return;
-    if (dragX > 100) handleReaction("like");
-    else if (dragX < -100) handleReaction("dislike");
+    if (dragX > dragThreshold) handleReaction("like");
+    else if (dragX < -dragThreshold) handleReaction("dislike");
     setDragX(0); setIsDragging(false); dragStart.current = null;
   };
 
@@ -306,6 +305,9 @@ export default function PersonaBuilder() {
         .chip.on { border-color:currentColor; }
         .jt { font-family:'DM Sans',sans-serif; font-size:11px; padding:5px 10px; border-radius:5px; border:1px solid #2a2a2a; background:#141414; color:#666; cursor:pointer; transition:all .18s; letter-spacing:.02em; }
         .jt:hover { color:#aaa; border-color:#444; }
+        .tip { position:relative; }
+        .tip::after { content:attr(data-tip); position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); padding:5px 10px; background:#1a1a1a; border:1px solid #333; border-radius:6px; font-family:'DM Sans',sans-serif; font-size:11px; color:#aaa; white-space:nowrap; pointer-events:none; opacity:0; transition:opacity .18s; }
+        .tip:hover::after { opacity:1; }
         .sb { font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; padding:11px 30px; border-radius:24px; border:none; cursor:pointer; transition:all .18s; color:#fff; }
         .sb:hover { transform:translateY(-1px); filter:brightness(1.08); }
         .sk { font-family:'DM Sans',sans-serif; font-size:13px; color:#555; background:none; border:none; cursor:pointer; padding:8px 16px; transition:color .18s; }
@@ -313,16 +315,36 @@ export default function PersonaBuilder() {
         ::-webkit-scrollbar { width:3px; }
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:#222; border-radius:2px; }
+        @media (max-width:768px) {
+          .rb { width:48px; height:48px; font-size:18px; }
+          .rb.big { width:56px; height:56px; font-size:22px; }
+          .chip { padding:6px 12px; font-size:12px; }
+          .sb { padding:10px 24px; font-size:13px; }
+        }
       `}</style>
 
-      {/* LEFT PANEL */}
-      <div style={S.left}>
+      {/* MOBILE TOP BAR */}
+      <div style={S.mobileBar}>
+        <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
+          <span style={S.logo}>persona</span>
+          <span style={S.logoN}>{reactions.length}/{MOCK_POIS.length}</span>
+        </div>
+        <button className="jt" onClick={() => setShowPanel(!showPanel)}>
+          {showPanel ? "✕" : `☰ ${reactions.length > 0 ? reactions.length : ""}`}
+        </button>
+      </div>
+
+      {/* LEFT PANEL (slide-over on mobile) */}
+      {showPanel && <div style={S.overlay} onClick={() => setShowPanel(false)} />}
+      <div style={{ ...S.left, ...(showPanel ? S.leftOpen : {}) }}>
         <div style={S.lHead}>
           <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
             <span style={S.logo}>persona</span>
             <span style={S.logoN}>{reactions.length}/{MOCK_POIS.length}</span>
           </div>
-          <button className="jt" onClick={() => setShowJson(!showJson)}>{showJson ? "profile" : "{ }"}</button>
+          <div style={{ display:"flex", gap:8 }}>
+            <span className="tip" data-tip="View your persona as JSON"><button className="jt" onClick={() => setShowJson(!showJson)}>{showJson ? "profile" : "{ }"}</button></span>
+          </div>
         </div>
 
         <div style={S.progW}>
@@ -497,8 +519,8 @@ export default function PersonaBuilder() {
                 return (
                   <span key={`${currentIndex}-${tag}`} className={`chip ${on?"on":""}`}
                     style={{
-                      background: on ? (neg?"rgba(184,122,90,.12)":"rgba(91,154,106,.12)") : "rgba(255,255,255,.03)",
-                      color: on ? (neg?"#daa080":"#7cc08e") : "#777",
+                      background: on ? (neg?"rgba(184,122,90,.12)":"rgba(91,154,106,.12)") : "rgba(255,255,255,.05)",
+                      color: on ? (neg?"#daa080":"#7cc08e") : "#999",
                       animation:`chipIn .25s ${i*35}ms both`,
                     }}
                     onClick={() => toggleReason(tag)}
@@ -520,9 +542,42 @@ export default function PersonaBuilder() {
   );
 }
 
+const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
+
 const S = {
-  root: { display:"flex", height:"100vh", width:"100%", fontFamily:"'DM Sans',sans-serif", background:"#0c0c0c", color:"#ddd", overflow:"hidden" },
-  left: { width:300, minWidth:300, background:"#101010", borderRight:"1px solid #1a1a1a", display:"flex", flexDirection:"column", zIndex:3 },
+  root: { display:"flex", height:"100dvh", width:"100%", fontFamily:"'DM Sans',sans-serif", background:"#0c0c0c", color:"#ddd", overflow:"hidden", flexDirection: isMobile ? "column" : "row" },
+
+  // Mobile top bar - only visible on mobile
+  mobileBar: {
+    display: isMobile ? "flex" : "none",
+    justifyContent:"space-between", alignItems:"center",
+    padding:"12px 16px", background:"#101010",
+    borderBottom:"1px solid #1a1a1a", zIndex:5,
+    position:"relative",
+  },
+
+  // Left panel - sidebar on desktop, slide-over on mobile
+  left: {
+    width: isMobile ? "85vw" : 300,
+    maxWidth: isMobile ? 340 : "none",
+    minWidth: isMobile ? "auto" : 300,
+    background:"#101010",
+    borderRight: isMobile ? "none" : "1px solid #1a1a1a",
+    display:"flex", flexDirection:"column", zIndex:10,
+    ...(isMobile ? {
+      position:"fixed", top:0, left:0, bottom:0,
+      transform:"translateX(-100%)",
+      transition:"transform .3s cubic-bezier(.22,1,.36,1)",
+      boxShadow:"4px 0 24px rgba(0,0,0,.5)",
+    } : {}),
+  },
+  leftOpen: { transform:"translateX(0)" },
+  overlay: {
+    position:"fixed", inset:0, background:"rgba(0,0,0,.5)",
+    zIndex:9, display: isMobile ? "block" : "none",
+  },
+  mobileClose: { display: isMobile ? "inline-flex" : "none" },
+
   lHead: { padding:"18px 18px 0", display:"flex", justifyContent:"space-between", alignItems:"center" },
   logo: { fontFamily:"'Instrument Serif',serif", fontSize:21, fontStyle:"italic", color:"#ddd", letterSpacing:"-0.01em" },
   logoN: { fontSize:11, color:"#444" },
@@ -544,24 +599,25 @@ const S = {
   hR: { fontSize:10, color:"#444", marginLeft:"auto", maxWidth:90, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" },
   jsonW: { flex:1, overflowY:"auto", padding:"10px 18px" },
   jsonP: { fontSize:10, fontFamily:"'SF Mono','Fira Code',monospace", color:"#5a8a5a", lineHeight:1.5, whiteSpace:"pre-wrap", wordBreak:"break-all" },
-  right: { flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:36, position:"relative", overflow:"hidden" },
-  cardArea: { display:"flex", flexDirection:"column", alignItems:"center", gap:22, width:"100%", maxWidth:400 },
+
+  right: { flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding: isMobile ? 16 : 36, position:"relative", overflow:"hidden" },
+  cardArea: { display:"flex", flexDirection:"column", alignItems:"center", gap: isMobile ? 16 : 22, width:"100%", maxWidth:400, background:"rgba(12,12,12,0.65)", backdropFilter:"blur(12px)", borderRadius:20, border:"1px solid rgba(255,255,255,0.06)", padding: isMobile ? 14 : 20 },
   dots: { display:"flex", gap:5, justifyContent:"center" },
   card: { width:"100%", background:"rgba(21,21,21,0.92)", backdropFilter:"blur(20px)", borderRadius:14, overflow:"hidden", boxShadow:"0 6px 36px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,0.04)", cursor:"grab", position:"relative", userSelect:"none", touchAction:"none" },
-  imgW: { position:"relative", width:"100%", height:250, overflow:"hidden" },
+  imgW: { position:"relative", width:"100%", height: isMobile ? 200 : 250, overflow:"hidden" },
   img: { width:"100%", height:"100%", objectFit:"cover" },
   imgG: { position:"absolute", bottom:0, left:0, right:0, height:90, background:"linear-gradient(transparent,rgba(21,21,21,0.92))" },
   loc: { position:"absolute", top:12, left:14, fontSize:11, color:"rgba(255,255,255,.65)", background:"rgba(0,0,0,.35)", backdropFilter:"blur(6px)", padding:"3px 9px", borderRadius:10 },
-  cBody: { padding:"10px 18px 18px" },
-  cTitle: { fontFamily:"'Instrument Serif',serif", fontSize:22, fontWeight:400, color:"#eee", fontStyle:"italic", lineHeight:1.2 },
-  cDesc: { fontSize:13, color:"#888", lineHeight:1.55, marginBottom:12 },
+  cBody: { padding: isMobile ? "8px 14px 14px" : "10px 18px 18px" },
+  cTitle: { fontFamily:"'Instrument Serif',serif", fontSize: isMobile ? 20 : 22, fontWeight:400, color:"#eee", fontStyle:"italic", lineHeight:1.2 },
+  cDesc: { fontSize: isMobile ? 12 : 13, color:"#888", lineHeight:1.55, marginBottom: isMobile ? 8 : 12 },
   cTags: { display:"flex", flexWrap:"wrap", gap:5, marginBottom:8 },
   cTag: { fontSize:10, color:"#666", background:"rgba(255,255,255,.03)", padding:"3px 9px", borderRadius:8 },
   cHours: { fontSize:10, color:"#444" },
-  btnRow: { display:"flex", gap:18, alignItems:"center", justifyContent:"center" },
-  rBox: { width:"100%", maxWidth:460, padding:28 },
-  rTitle: { fontFamily:"'Instrument Serif',serif", fontSize:20, fontWeight:400, color:"#ddd", fontStyle:"italic" },
-  rQ: { fontSize:14, color:"#777", marginBottom:18 },
-  chips: { display:"flex", flexWrap:"wrap", gap:7, marginBottom:22 },
-  fIn: { width:"100%", padding:"11px 15px", background:"rgba(255,255,255,.03)", border:"1px solid #222", borderRadius:10, color:"#bbb", fontSize:13, fontFamily:"'DM Sans',sans-serif", outline:"none" },
+  btnRow: { display:"flex", gap: isMobile ? 14 : 18, alignItems:"center", justifyContent:"center" },
+  rBox: { width:"100%", maxWidth:460, padding: isMobile ? 20 : 28, background:"rgba(12,12,12,0.65)", backdropFilter:"blur(12px)", borderRadius:20, border:"1px solid rgba(255,255,255,0.06)" },
+  rTitle: { fontFamily:"'Instrument Serif',serif", fontSize: isMobile ? 18 : 20, fontWeight:400, color:"#ddd", fontStyle:"italic" },
+  rQ: { fontSize: isMobile ? 13 : 14, color:"#999", marginBottom: isMobile ? 14 : 18 },
+  chips: { display:"flex", flexWrap:"wrap", gap: isMobile ? 6 : 7, marginBottom: isMobile ? 16 : 22 },
+  fIn: { width:"100%", padding:"11px 15px", background:"rgba(255,255,255,.06)", border:"1px solid #333", borderRadius:10, color:"#bbb", fontSize:13, fontFamily:"'DM Sans',sans-serif", outline:"none" },
 };
